@@ -1,3 +1,4 @@
+# Represents each bar in the board
 class Item:
     
     def __init__(self, name, icon, color, value=0):
@@ -6,10 +7,14 @@ class Item:
         self.value = value
         self.color = color
 
+# Contains all the items present in the board
 class Board:
     
-    def __init__():
+    def __init__(size=10):
         self.items = []
+        self.mn = 0
+        self.mx = 0
+        self.size = 10
     
     def addItem(self, item):
         self.items.append(item)
@@ -17,10 +22,10 @@ class Board:
     def sortItems(self):
         self.items.sort(key = lambda item: -item.value)
     
-    def topX(self, x = 10):
+    def top(self):
         self.sortItems()
         x = min(x, len(self.items))
-        return self.Items[:x]
+        return self.Items[:self.size]
     
 class State:
     

@@ -10,11 +10,11 @@ class Item:
 # Contains all the items present in the board
 class Board:
     
-    def __init__(size=10):
+    def __init__(self, size=10):
         self.items = []
         self.mn = 0
         self.mx = 0
-        self.size = 10
+        self.size = size
     
     def addItem(self, item):
         self.items.append(item)
@@ -37,3 +37,6 @@ class State:
         self.prevBoard = self.board
         self.board = board
         self.date = date
+
+    def make_frame(self, t):
+

@@ -1,6 +1,6 @@
 class Item:
     
-    def __init__(self, name, icon, value=0, color):
+    def __init__(self, name, icon, color, value=0):
         self.name = name
         self.icon = icon
         self.value = value
@@ -8,9 +8,8 @@ class Item:
 
 class Board:
     
-    self.items = []
     def __init__():
-        pass
+        self.items = []
     
     def addItem(self, item):
         self.items.append(item)

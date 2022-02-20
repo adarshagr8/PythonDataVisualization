@@ -2,33 +2,39 @@ import csv
 import classes
 import matplotlib
 
-state = classes.State()
-board = classes.Board()
 
-rows = []
-with open("Data_Format.csv", 'r') as file:
-    csvreader = csv.reader(file)
+class DataProcessor:
+    state = classes.State()
+    board = classes.Board()
 
-    # making Items
-    name = next(csvreader)[1:]
-    icon = next(csvreader)[1:]
-    color = [matplotlib.colors.to_rgb(col) for col in next(csvreader)[1:]]
+    def __init__(self, path):
+        self.path = path
 
-    # making Board at None date
-    for i in range(len(name)):
-        board.addItem(classes.Item(name[i], icon[i], color[i], i))
+    def makeAndUpdateBoards(self):
+        with open(self.path, 'r') as file:
+            csvreader = csv.reader(file)
 
-    # print(vars(vars(board)['items'][0]))
-    for row in csvreader:
-        date = row[0]
-        print(date)
-        values = row[1:]
-        for i in range(len(values)):
-            for item in vars(board)['items']:
-                if vars(item)['originalIndex'] == i:
-                    vars(item)['value'] = values[i]
+            # making Items
+            name = next(csvreader)[1:]
+            icon = next(csvreader)[1:]
+            color = [matplotlib.colors.to_rgb(col)
+                     for col in next(csvreader)[1:]]
 
-        state.updateState(board, date)
+            # making Board at None date
+            for i in range(len(name)):
+                self.board.addItem(classes.Item(name[i], icon[i], color[i], i))
 
-        for st in vars(vars(state)['board'])['items']:
-            print(vars(st))
+            for row in csvreader:
+                date = row[0]
+                print(date)
+                values = row[1:]
+                for i in range(len(values)):
+                    for item in vars(self.board)['items']:
+                        if vars(item)['originalIndex'] == i:
+                            vars(item)['value'] = values[i]
+
+                self.state.updateState(date, self.board)
+
+                # Print data
+                # for item in vars(self.board)['items']:
+                #     print(vars(item))

@@ -10,14 +10,19 @@ class Item:
 # Contains all the items present in the board
 class Board:
     
-    def __init__(self, size=10, dec=True):
+    def __init__(self, size=10, dec=True, W=1920, H=1080):
         self.items = []
         self.mn = 0
         self.mx = 0
         self.size = size
         self.graphWPer = 70
         self.graphHPer = 90
-        self.leftPer = 30
+        self.leftPer = 25
+        self.rightPer = 5
+        self.headerPer = 7
+        self.footerPer = 3
+        self.W = W
+        self.H = H
         self.dec = True
     
     def addItem(self, item):
@@ -31,6 +36,9 @@ class Board:
         x = min(x, len(self.items))
         return self.Items[:self.size]
     
+    def graphBeg(self):
+        return (self.H * self.headerPer / 100, self.W * self.rightPer / 100)
+
 class State:
     
     def __init__(self, duration, count):

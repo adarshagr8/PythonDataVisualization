@@ -2,7 +2,6 @@ import numpy as np
 import gizeh as gz
 import moviepy.editor as mpy
 
-W, H = 1920, 1080
 FPS = 30
 
 if __name__ == "__main__":
@@ -16,6 +15,17 @@ if __name__ == "__main__":
 
 	def make_frame(t):
 		board = state.currentBoard(t)
+		surface = gizeh.Surface(board.W, board.H)
+		topItems = board.top()
+		widths = [topItems[i].value * board.graphWPer / (100 * topItems[0].value) for i in range(len(topItems))]
+		height = (board.H * board.graphHPer) / (100 * len(topItems))
+		cur_x, cur_y = board.graphBeg()
+		for item in len(topItems):
+			
+			cur_x += height
+			pass
+		return surface.get_npimage()
+
 
 	clip = mpy.VideoClip(make_frame, duration=duration)
 	clip.write_videofile('./out/' + data + '.mp4', fps=FPS)

@@ -6,10 +6,11 @@ from PIL import Image
 
 
 FPS = 30
-
+FONT_FAMILY = "Lato"
+TEXT_COLOR = (0,0,0)
+FONT_SIZE = 25
 
 def resizeImage(image, basewidth, baseheight):
-	basewidth = 300
 	img = Image.open(image)
 	img = img.resize((basewidth, baseheight), Image.ANTIALIAS)
 	img.save(image)
@@ -50,9 +51,12 @@ if __name__ == "__main__":
 
 
 			# Text
-			text = gz.text(topItems[i].value, fontfamily="Lato", fontsize=12, fill=(0,0,0), xy=(cur_x + widths[i] + (2*board.sepPer + board.iconPer + board.valuePer/2) * board.W / 100, cur_y + height*0.95/2))
+			text = gz.text(topItems[i].value, fontfamily=FONT_FAMILY, fontsize=FONT_SIZE, fill=TEXT_COLOR, xy=(cur_x + widths[i] + (2*board.sepPer + board.iconPer + board.valuePer/2) * board.W / 100, cur_y + height*0.95/2))
 
-			group = gz.group([bar, icon, text])
+			# Name
+			name = gz.text(topItems[i].name, fontfamily=FONT_FAMILY, fontsize=FONT_SIZE, fill=TEXT_COLOR, xy=(cur_x - board.sepPer * board.W / 200, cur_y + height*0.95/2), h_align='right')
+
+			group = gz.group([name, bar, icon, text])
 			group.draw(surface)
 			cur_x += height
 

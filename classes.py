@@ -10,17 +10,18 @@ class Item:
 # Contains all the items present in the board
 class Board:
     
-    def __init__(self, size=10):
+    def __init__(self, size=10, dec=True):
         self.items = []
         self.mn = 0
         self.mx = 0
         self.size = size
+        self.dec = True
     
     def addItem(self, item):
         self.items.append(item)
     
     def sortItems(self):
-        self.items.sort(key = lambda item: -item.value)
+        self.items.sort(key = lambda item: -item.value if dec else item.value)
     
     def top(self):
         self.sortItems()
@@ -29,14 +30,18 @@ class Board:
     
 class State:
     
-    def __init__(self):
-        self.board = Board()
+    def __init__(self, duration, count):
+        self.boards = []
         self.date = Null
+        self.duration = duration
+        self.count = count
         
     def updateState(self, board, date):
-        self.prevBoard = self.board
-        self.board = board
-        self.date = date
+        self.boards.append((date, board))
 
-    def make_frame(self, t):
+    def currentBoard(self, t):
+        unit_time = duration / count
+        day_index = t / unit_time
+        return self.boards[day_index]
+
 

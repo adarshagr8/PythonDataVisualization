@@ -1,15 +1,18 @@
 # Represents each bar in the board
 class Item:
-    
-    def __init__(self, name, icon, color, value=0):
+
+    def __init__(self, name, icon, color, originalIndex, value=0):
         self.name = name
         self.icon = icon
-        self.value = value
         self.color = color
+        self.originalIndex = originalIndex
+        self.value = value
 
 # Contains all the items present in the board
+
+
 class Board:
-    
+
     def __init__(self, size=10, dec=True, W=1920, H=1080):
         self.items = []
         self.mn = 0
@@ -24,35 +27,34 @@ class Board:
         self.W = W
         self.H = H
         self.dec = True
-    
+
     def addItem(self, item):
         self.items.append(item)
-    
+
     def sortItems(self):
-        self.items.sort(key = lambda item: -item.value if dec else item.value)
-    
+        self.items.sort(key=lambda item: -item.value if self.dec else item.value)
+
     def top(self):
         self.sortItems()
         x = min(x, len(self.items))
         return self.Items[:self.size]
-    
+
     def graphBeg(self):
         return (self.H * self.headerPer / 100, self.W * self.rightPer / 100)
 
+
 class State:
-    
-    def __init__(self, duration, count):
+
+    def __init__(self, duration=0, count=0):
         self.boards = []
-        self.date = Null
+        self.date = None
         self.duration = duration
         self.count = count
-        
+
     def updateState(self, board, date):
         self.boards.append((date, board))
 
     def currentBoard(self, t):
-        unit_time = duration / count
+        unit_time = self.duration / self.count
         day_index = t / unit_time
         return self.boards[day_index]
-
-

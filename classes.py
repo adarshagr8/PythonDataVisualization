@@ -15,6 +15,9 @@ class Board:
         self.mn = 0
         self.mx = 0
         self.size = size
+        self.graphWPer = 70
+        self.graphHPer = 90
+        self.leftPer = 30
         self.dec = True
     
     def addItem(self, item):

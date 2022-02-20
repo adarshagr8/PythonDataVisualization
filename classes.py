@@ -20,6 +20,10 @@ class Board:
         self.size = size
         self.graphWPer = 70
         self.graphHPer = 90
+        self.barPer = 50
+        self.sepPer = 1
+        self.iconPer = 8
+        self.valuePer = 10
         self.leftPer = 25
         self.rightPer = 5
         self.headerPer = 7

@@ -1,8 +1,19 @@
 import numpy as np
 import gizeh as gz
 import moviepy.editor as mpy
+import cairo
+from PIL import Image
+
 
 FPS = 30
+
+
+def resizeImage(image, basewidth, baseheight):
+	basewidth = 300
+	img = Image.open(image)
+	img = img.resize((basewidth, baseheight), Image.ANTIALIAS)
+	img.save(image)
+
 
 if __name__ == "__main__":
 	if sys.argc < 3:
@@ -17,13 +28,34 @@ if __name__ == "__main__":
 		board = state.currentBoard(t)
 		surface = gizeh.Surface(board.W, board.H)
 		topItems = board.top()
-		widths = [topItems[i].value * board.graphWPer / (100 * topItems[0].value) for i in range(len(topItems))]
+		widths = [topItems[i].value * board.barPer / (100 * topItems[0].value) for i in range(len(topItems))]
 		height = (board.H * board.graphHPer) / (100 * len(topItems))
 		cur_x, cur_y = board.graphBeg()
-		for item in len(topItems):
-			
+		for i in len(topItems):
+			# Rectangle for bar
+			bar = gz.rectangle(lx=widths[i], ly=height*0.95, xy=(cur_x + board.W * widths[i] / (2 * 100), cur_y + height*0.95/2), fill=topItems[i].color)
+
+			# Resize the icon to required size
+			resizeImage(topItems[i].icon, (self.W * self.iconPer) / 100, height*0.95)
+
+			# Convert the image to image pattern
+			image_surface = cairo.ImageSurface.create_from_png(topItems[i].icon)
+			im = 0+numpy.frombuffer(image_surface.get_data(), numpy.uint8)
+			im.shape = (image_surface.get_height(), image_surface.get_width(), 4)
+			im = im[:,:,[2,1,0,3]]
+			gizeh_pattern = gizeh.ImagePattern(im)
+
+			# Rectangle for icon
+			icon = gz.rectangle(lx=im.shape[1]*2, ly=im.shape[0]*2, xy=(cur_x + widths[i] + (board.sepPer + board.iconPer/2) * board.W / 100, cur_y + height*0.95/2), fill=gizeh_pattern)
+
+
+			# Text
+			text = gz.text(topItems[i].value, fontfamily="Lato", fontsize=12, fill=(0,0,0), xy=(cur_x + widths[i] + (2*board.sepPer + board.iconPer + board.valuePer/2) * board.W / 100, cur_y + height*0.95/2))
+
+			group = gz.group([bar, icon, text])
+			group.draw(surface)
 			cur_x += height
-			pass
+
 		return surface.get_npimage()
 
 

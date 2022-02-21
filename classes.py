@@ -46,6 +46,12 @@ class Board:
     def graphBeg(self):
         return (self.H * self.headerPer / 100, self.W * self.rightPer / 100)
 
+    def findItem(self, name):
+        for item in self.items:
+            if item.name == name:
+                return item
+        return None
+
 
 class State:
 
@@ -54,6 +60,7 @@ class State:
         self.date = None
         self.duration = duration
         self.count = count
+        self.standstill = 5
 
     def updateState(self, board, date):
         self.boards.append((date, board))
@@ -62,3 +69,10 @@ class State:
         unit_time = self.duration / self.count
         day_index = t / unit_time
         return self.boards[day_index]
+
+    def nextBoard(self, t):
+        unit_time = self.duration / self.count
+        day_index = t / unit_time
+        if day_index == len(self.boards) - 1:
+            return None
+        return self.boards[day_index + 1]

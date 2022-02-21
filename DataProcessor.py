@@ -9,8 +9,6 @@ class DataProcessor:
 
     def __init__(self, path):
         self.path = path
-
-    def makeAndUpdateBoards(self):
         with open(self.path, 'r') as file:
             csvreader = csv.reader(file)
 
@@ -26,14 +24,13 @@ class DataProcessor:
 
             for row in csvreader:
                 date = row[0]
-                print(date)
                 values = row[1:]
                 for i in range(len(values)):
                     for item in vars(self.board)['items']:
                         if vars(item)['originalIndex'] == i:
-                            vars(item)['value'] = values[i]
+                            vars(item)['value'] = int(values[i])
 
-                self.state.updateState(date, self.board)
+                self.state.updateState(self.board, date)
 
                 # Print data
                 # for item in vars(self.board)['items']:

@@ -1,3 +1,5 @@
+import copy
+
 # Represents each bar in the board
 class Item:
 
@@ -21,6 +23,7 @@ class Board:
         self.graphWPer = 70
         self.graphHPer = 90
         self.barPer = 50
+        self.barLPer = 8
         self.sepPer = 1
         self.iconPer = 8
         self.valuePer = 10
@@ -40,8 +43,7 @@ class Board:
 
     def top(self):
         self.sortItems()
-        x = min(x, len(self.items))
-        return self.Items[:self.size]
+        return self.items[:min(self.size, len(self.items))]
 
     def graphBeg(self):
         return (self.H * self.headerPer / 100, self.W * self.rightPer / 100)
@@ -55,24 +57,31 @@ class Board:
 
 class State:
 
-    def __init__(self, duration=0, count=0):
+    def __init__(self):
         self.boards = []
         self.date = None
-        self.duration = duration
-        self.count = count
-        self.standstill = 5
+        self.duration = 0
+        self.count = 0
+        self.standstill = 3
 
     def updateState(self, board, date):
-        self.boards.append((date, board))
+        self.count += 1
+        self.boards.append((date, copy.deepcopy(board)))
 
     def currentBoard(self, t):
         unit_time = self.duration / self.count
-        day_index = t / unit_time
+        day_index = min(len(self.boards) - 1, int(t // unit_time))
         return self.boards[day_index]
 
     def nextBoard(self, t):
         unit_time = self.duration / self.count
-        day_index = t / unit_time
+        day_index = min(len(self.boards) - 1, int(t // unit_time))
         if day_index == len(self.boards) - 1:
             return None
         return self.boards[day_index + 1]
+
+    def printState(self):
+        for i in self.boards:
+            for j in i[1].items:
+                pass
+                # print(vars(j))

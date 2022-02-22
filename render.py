@@ -7,21 +7,29 @@ from math import ceil
 import requests
 from DataProcessor import DataProcessor
 from PIL import Image
+import validators
+from datetime import datetime
 
-FPS = 15
+FPS = 30
 FONT_FAMILY = "Lato"
 TEXT_COLOR = (0, 0, 0)
-FONT_SIZE = 25
-
+FONT_SIZE = 30
+HEADER_SIZE = 50
+DISPLAY_DATE_SIZE = 40
 last = None
-
+pi = 3.14
+FAST_TICK_TIME = 1
+SLOW_TICK_TIME = 4
 
 def processImage(image, basewidth, baseheight, name):
     image_path = "./temp/" + name + ".png"
-    response = requests.get(image)
-    file = open(image_path, "wb")
-    file.write(response.content)
-    file.close()
+    if validators.url(image):
+        response = requests.get(image)
+        file = open(image_path, "wb")
+        file.write(response.content)
+        file.close()
+    else:
+        image_path = image
     img = Image.open(image_path)
     img = img.resize((int(basewidth), int(baseheight)), Image.ANTIALIAS)
     img.save(image_path)
@@ -34,11 +42,12 @@ def findRanks(top_items):
     return ranks
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Correct format: render.py <data> <duration>")
+    if len(sys.argv) < 4:
+        print("Correct format: render.py <data> <duration> <title>")
         exit(1)
     data = sys.argv[1]
     duration = int(sys.argv[2])
+    title = sys.argv[3]
     dataProcessor = DataProcessor(data)
     state = dataProcessor.state
     state.duration = duration
@@ -48,6 +57,9 @@ if __name__ == "__main__":
         global last
         board = state.currentBoard(t)
         next_board = state.nextBoard(t)
+        date = board[0]
+        date_obj = datetime.strptime(date, '%Y-%m')
+        display_date = date_obj.strftime("%b %Y")
         if next_board is None:
             return last
         surface = gz.Surface(width=board[1].W, height=board[1].H, bg_color=(1,1,1))
@@ -71,6 +83,7 @@ if __name__ == "__main__":
                 translate[item] = board[1].H - (cur_y + height * rank)
 
         gizeh_patterns = {}
+        bar_colors = {}
         for item in top_items:
             # Resize the icon to required size
             image_path = processImage(item.icon, (board[1].W * board[1].iconPer) / 100, height * 0.95, item.name)
@@ -79,11 +92,15 @@ if __name__ == "__main__":
             image_surface = cairo.ImageSurface.create_from_png(image_path)
             im = 0 + np.frombuffer(image_surface.get_data(), np.uint8)
             im.shape = (image_surface.get_height(), image_surface.get_width(), 4)
+            freq = np.bincount(im.reshape(len(im), -1))
+            barColor = np.argmax(freq)
+            bar_colors[item.name] = barColor
             im = im[:, :, [2, 1, 0, 3]]
             gizeh_pattern = gz.ImagePattern(im)
             gizeh_patterns[item.name] = gizeh_pattern
 
         for i in range(len(top_items)):
+            date_obj = datetime.strptime(date, '%Y-%m')
             extraTime = t - unit_time * day_index
             difference = next_board[1].findItem(top_items[i].name).value - top_items[i].value
             change = int(ceil(difference * (extraTime / unit_time)))
@@ -102,7 +119,7 @@ if __name__ == "__main__":
                                ly=height * 0.95,
                                xy=(cur_x + width / 2,
                                    cur_y + height * 0.95 / 2),
-                               fill=top_items[i].color)
+                               fill=bar_colors[top_items[i].name])
 
 
             # Rectangle for icon
@@ -120,8 +137,9 @@ if __name__ == "__main__":
                            fontfamily=FONT_FAMILY,
                            fontsize=FONT_SIZE,
                            fill=TEXT_COLOR,
-                           xy=(cur_x + width + (2 * board[1].sepPer + board[1].iconPer) * board[1].W / 100,
-                               cur_y + height * 0.95 / 2))
+                           xy=(cur_x + width + (board[1].sepPer + board[1].iconPer) * board[1].W / 100,
+                               cur_y + height * 0.95 / 2),
+                           h_align='left')
 
             # Name
             # print('Value for', top_items[i].name, 'xy =', (cur_x - board[1].sepPer * board[1].W / 200,
@@ -134,14 +152,42 @@ if __name__ == "__main__":
                                cur_y + height * 0.95 / 2),
                            h_align='right')
 
+            # Title
+            title_vector = gz.text(title, fontfamily=FONT_FAMILY, fontsize=HEADER_SIZE, fontweight="bold",
+                            xy=(board[1].W / 2, (board[1].headerPer * board[1].H / 2) / 100))
+
+            # Clock
+            clock_center = (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100)
+            clock_circle = gz.circle(r=(board[1].circleRadius * board[1].W) / 100, xy=clock_center, fill=(1, 1, 1, 0), stroke_width=12, stroke=(0, 0, 0))
+            inner_circle = gz.circle(r=(0.6 * board[1].W) / 100, xy=clock_center, fill=(0, 0, 0, 1))
+            tick_1 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100),board[1].H * board[1].clockPosH / 100), (board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100),
+                                         (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)], fill=(0, 0, 0), close_path=True, stroke_width=5)
+            tick_2 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100), (board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100),
+                                         (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)], fill=(0, 0, 0), close_path=True, stroke_width=3)
+            tick_2 = tick_2.rotate(2 * pi / 3, center=clock_center)
+
+            tick_2 = tick_2.rotate(2 * pi * t / FAST_TICK_TIME, center=clock_center)
+            tick_1 = tick_1.rotate(2 * pi * t / SLOW_TICK_TIME, center=clock_center)
+
+            clock_circle.draw(surface)
+            inner_circle.draw(surface)
+            tick_1.draw(surface)
+            tick_2.draw(surface)
+
             group = gz.Group([name, bar, icon, text])
             group = group.translate(xy=[0, translate[top_items[i].name] * extraTime / unit_time])
             group.draw(surface)
+            title_vector.draw(surface)
             cur_y += height
 
-        last = surface.get_npimage(transparent=True)
+        display_date_gz = gz.text(display_date, fontfamily=FONT_FAMILY, fontsize=DISPLAY_DATE_SIZE, fontweight="bold",
+                                  xy=(board[1].W * board[1].clockPosW / 100, board[1].H * (board[1].clockPosH - 15) / 100))
+        display_date_gz.draw(surface)
 
-        return surface.get_npimage(transparent=True)
+        ret = surface.get_npimage(transparent=True)
+        ret[:,:,3] = 230
+        last = ret
+        return ret
 
 
     clip = mpy.VideoClip(make_frame, duration=duration + state.standstill)
@@ -159,6 +205,8 @@ if __name__ == "__main__":
         size=(1920, 1080)
     )
 
-    final_clip.write_videofile('./out/' + data.split('.')[0] + '.mp4', fps=FPS)
+    audio = mpy.AudioFileClip("bg_audio.mp3")
+    final_clip.audio = audio.audio_loop(duration=duration)
+    final_clip.write_videofile('./out/' + '_'.join(title.split(' ')) + '.mp4', fps=FPS)
 
     # clip.ipython_display(fps=FPS, width=state.W, autoplay=1, loop=1)

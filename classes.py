@@ -11,26 +11,28 @@ class Item:
         self.value = value
 
 # Contains all the items present in the board
-
-
 class Board:
 
-    def __init__(self, size=10, dec=True, W=1920, H=1080):
+    def __init__(self, size=15, dec=True, W=1920, H=1080):
         self.items = []
         self.mn = 0
         self.mx = 0
         self.size = size
         self.graphWPer = 70
-        self.graphHPer = 90
+        self.graphHPer = 94
         self.barPer = 50
-        self.barLPer = 8
         self.sepPer = 1
-        self.iconPer = 8
+        self.barLPer = (self.graphHPer - self.size * self.sepPer) / self.size
+        self.iconPer = 5
         self.valuePer = 10
         self.leftPer = 25
         self.rightPer = 5
-        self.headerPer = 7
+        self.headerPer = 15
         self.footerPer = 3
+        self.circleRadius = 6
+        self.clockPosW = 80
+        self.clockPosH = 75
+
         self.W = W
         self.H = H
         self.dec = True
@@ -46,7 +48,7 @@ class Board:
         return self.items[:min(self.size, len(self.items))]
 
     def graphBeg(self):
-        return (self.H * self.headerPer / 100, self.W * self.rightPer / 100)
+        return (self.W * self.leftPer / 100, self.H * self.headerPer / 100)
 
     def findItem(self, name):
         for item in self.items:

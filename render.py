@@ -9,6 +9,8 @@ from DataProcessor import DataProcessor
 from PIL import Image
 import validators
 from datetime import datetime
+import random
+from copy import deepcopy
 
 FPS = 30
 FONT_FAMILY = "Lato"
@@ -20,6 +22,9 @@ last = None
 pi = 3.14
 FAST_TICK_TIME = 1
 SLOW_TICK_TIME = 4
+
+random_colors = [(52/255, 86/255, 139/255), (255/255, 111/255, 97/255), (136/255, 176/255, 75/255), (221/255, 65/255, 36/255), (69/255, 184/255, 172/255)]
+common_color = (69/255, 184/255, 172/255)
 
 def processImage(image, basewidth, baseheight, name):
     image_path = "./temp/" + name + ".png"
@@ -52,6 +57,13 @@ if __name__ == "__main__":
     state = dataProcessor.state
     state.duration = duration
     state.printState()
+    bar_colors = {}
+
+    for item in state.boards[0][1].items:
+        if item.name in state.topPlaceItem:
+            bar_colors[item.name] = random.choice(random_colors)
+        else:
+            bar_colors[item.name] = common_color
 
     def make_frame(t):
         global last
@@ -83,8 +95,7 @@ if __name__ == "__main__":
                 translate[item] = board[1].H - (cur_y + height * rank)
 
         gizeh_patterns = {}
-        bar_colors = {}
-        for item in top_items:
+        for item in board[1].items:
             # Resize the icon to required size
             image_path = processImage(item.icon, (board[1].W * board[1].iconPer) / 100, height * 0.95, item.name)
 
@@ -92,15 +103,19 @@ if __name__ == "__main__":
             image_surface = cairo.ImageSurface.create_from_png(image_path)
             im = 0 + np.frombuffer(image_surface.get_data(), np.uint8)
             im.shape = (image_surface.get_height(), image_surface.get_width(), 4)
-            freq = np.bincount(im.reshape(len(im), -1))
-            barColor = np.argmax(freq)
-            bar_colors[item.name] = barColor
             im = im[:, :, [2, 1, 0, 3]]
             gizeh_pattern = gz.ImagePattern(im)
             gizeh_patterns[item.name] = gizeh_pattern
 
+        for item in next_ranks.keys():
+            if item not in current_ranks:
+                new_item = deepcopy(next_board[1].items[next_ranks[item]])
+                translate[item] = -board[1].H + (cur_y + height * next_ranks[item])
+                new_item.out = True
+                top_items.append(new_item)
+
+
         for i in range(len(top_items)):
-            date_obj = datetime.strptime(date, '%Y-%m')
             extraTime = t - unit_time * day_index
             difference = next_board[1].findItem(top_items[i].name).value - top_items[i].value
             change = int(ceil(difference * (extraTime / unit_time)))
@@ -115,77 +130,114 @@ if __name__ == "__main__":
             # Rectangle for bar
             # print('Bar for', top_items[i].name, 'xy =', (cur_x + width / 2, cur_y + height * 0.95 / 2), ', lx = ',
             #       width, 'ly = ', height * 0.95)
-            bar = gz.rectangle(lx=width,
-                               ly=height * 0.95,
-                               xy=(cur_x + width / 2,
+            if not top_items[i].out:
+                bar = gz.rectangle(lx=width,
+                                   ly=height * 0.95,
+                                   xy=(cur_x + width / 2,
+                                       cur_y + height * 0.95 / 2),
+                                   fill=bar_colors[top_items[i].name])
+                icon = gz.rectangle(lx=im.shape[1] * 2,
+                                    ly=im.shape[0] * 2,
+                                    xy=(cur_x + width, cur_y),
+                                    fill=gizeh_patterns[top_items[i].name])
+                text = gz.text(str(top_items[i].value + change),
+                               fontfamily=FONT_FAMILY,
+                               fontsize=FONT_SIZE,
+                               fill=TEXT_COLOR,
+                               xy=(cur_x + width + (board[1].sepPer + board[1].iconPer) * board[1].W / 100,
                                    cur_y + height * 0.95 / 2),
-                               fill=bar_colors[top_items[i].name])
+                               h_align='left')
+                name = gz.text(top_items[i].name,
+                               fontfamily=FONT_FAMILY,
+                               fontsize=FONT_SIZE,
+                               fill=TEXT_COLOR,
+                               xy=(cur_x - board[1].sepPer * board[1].W / 200,
+                                   cur_y + height * 0.95 / 2),
+                               h_align='right')
 
+            else:
+                bar = gz.rectangle(lx=width,
+                                   ly=height * 0.95,
+                                   xy=(cur_x + width / 2, board[1].H + height * 0.95 / 2),
+                                   fill=bar_colors[top_items[i].name])
+                icon = gz.rectangle(lx=im.shape[1] * 2,
+                                    ly=im.shape[0] * 2,
+                                    xy=(cur_x + width, board[1].H + height * 0.95 / 2),
+                                    fill=gizeh_patterns[top_items[i].name])
+                text = gz.text(str(top_items[i].value + change),
+                               fontfamily=FONT_FAMILY,
+                               fontsize=FONT_SIZE,
+                               fill=TEXT_COLOR,
+                               xy=(cur_x + width + (board[1].sepPer + board[1].iconPer) * board[1].W / 100,
+                                   board[1].H + height * 0.95 / 2),
+                               h_align='left')
+                name = gz.text(top_items[i].name,
+                               fontfamily=FONT_FAMILY,
+                               fontsize=FONT_SIZE,
+                               fill=TEXT_COLOR,
+                               xy=(cur_x - board[1].sepPer * board[1].W / 200,
+                                   board[1].H + height * 0.95 / 2),
+                               h_align='right')
 
             # Rectangle for icon
             # print('Icon for', top_items[i].name, 'xy =', (cur_x + width + (board[1].sepPer + board[1].iconPer / 2) * board[1].W / 100, cur_y + height * 0.95 / 2),
             #       ', lx = ', im.shape[1] * 2, 'ly = ', im.shape[0] * 2)
-            icon = gz.rectangle(lx=im.shape[1] * 2,
-                                ly=im.shape[0] * 2,
-                                xy=(cur_x + width, cur_y),
-                                fill=gizeh_patterns[top_items[i].name])
 
             # Value
             # print('Value for', top_items[i].name, 'xy =', (cur_x + width + (2 * board[1].sepPer + board[1].iconPer) * board[1].W / 100,
             #                    cur_y + height * 0.95 / 2), 'value = ', str(top_items[i].value + change))
-            text = gz.text(str(top_items[i].value + change),
-                           fontfamily=FONT_FAMILY,
-                           fontsize=FONT_SIZE,
-                           fill=TEXT_COLOR,
-                           xy=(cur_x + width + (board[1].sepPer + board[1].iconPer) * board[1].W / 100,
-                               cur_y + height * 0.95 / 2),
-                           h_align='left')
 
             # Name
             # print('Value for', top_items[i].name, 'xy =', (cur_x - board[1].sepPer * board[1].W / 200,
             #        cur_y + height * 0.95 / 2), 'value = ', top_items[i].name)
-            name = gz.text(top_items[i].name,
-                           fontfamily=FONT_FAMILY,
-                           fontsize=FONT_SIZE,
-                           fill=TEXT_COLOR,
-                           xy=(cur_x - board[1].sepPer * board[1].W / 200,
-                               cur_y + height * 0.95 / 2),
-                           h_align='right')
-
-            # Title
-            title_vector = gz.text(title, fontfamily=FONT_FAMILY, fontsize=HEADER_SIZE, fontweight="bold",
-                            xy=(board[1].W / 2, (board[1].headerPer * board[1].H / 2) / 100))
-
-            # Clock
-            clock_center = (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100)
-            clock_circle = gz.circle(r=(board[1].circleRadius * board[1].W) / 100, xy=clock_center, fill=(1, 1, 1, 0), stroke_width=12, stroke=(0, 0, 0))
-            inner_circle = gz.circle(r=(0.6 * board[1].W) / 100, xy=clock_center, fill=(0, 0, 0, 1))
-            tick_1 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100),board[1].H * board[1].clockPosH / 100), (board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100),
-                                         (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)], fill=(0, 0, 0), close_path=True, stroke_width=5)
-            tick_2 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100), (board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100), board[1].H * board[1].clockPosH / 100),
-                                         (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)], fill=(0, 0, 0), close_path=True, stroke_width=3)
-            tick_2 = tick_2.rotate(2 * pi / 3, center=clock_center)
-
-            tick_2 = tick_2.rotate(2 * pi * t / FAST_TICK_TIME, center=clock_center)
-            tick_1 = tick_1.rotate(2 * pi * t / SLOW_TICK_TIME, center=clock_center)
-
-            clock_circle.draw(surface)
-            inner_circle.draw(surface)
-            tick_1.draw(surface)
-            tick_2.draw(surface)
 
             group = gz.Group([name, bar, icon, text])
             group = group.translate(xy=[0, translate[top_items[i].name] * extraTime / unit_time])
             group.draw(surface)
-            title_vector.draw(surface)
             cur_y += height
+
+        # Title
+        title_vector = gz.text(title, fontfamily=FONT_FAMILY, fontsize=HEADER_SIZE, fontweight="bold",
+                               xy=(board[1].W / 2, (board[1].headerPer * board[1].H / 2) / 100))
+
+        title_vector.draw(surface)
+
+        # Clock
+        clock_center = (board[1].W * board[1].clockPosW / 100, board[1].H * board[1].clockPosH / 100)
+        clock_circle = gz.circle(r=(board[1].circleRadius * board[1].W) / 100, xy=clock_center, fill=(1, 1, 1, 0),
+                                 stroke_width=12, stroke=(0, 0, 0))
+        inner_circle = gz.circle(r=(0.6 * board[1].W) / 100, xy=clock_center, fill=(0, 0, 0, 1))
+        tick_1 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100),
+                                      board[1].H * board[1].clockPosH / 100), (
+                                     board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100),
+                                     board[1].H * board[1].clockPosH / 100),
+                                     (board[1].W * board[1].clockPosW / 100,
+                                      board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)],
+                             fill=(0, 0, 0), close_path=True, stroke_width=5)
+        tick_2 = gz.polyline(points=[(board[1].W * board[1].clockPosW / 100 - (0.25 * board[1].W / 100),
+                                      board[1].H * board[1].clockPosH / 100), (
+                                     board[1].W * board[1].clockPosW / 100 + (0.25 * board[1].W / 100),
+                                     board[1].H * board[1].clockPosH / 100),
+                                     (board[1].W * board[1].clockPosW / 100,
+                                      board[1].H * board[1].clockPosH / 100 - board[1].W * 4 / 100)],
+                             fill=(0, 0, 0), close_path=True, stroke_width=3)
+        tick_2 = tick_2.rotate(2 * pi / 3, center=clock_center)
+
+        tick_2 = tick_2.rotate(2 * pi * t / FAST_TICK_TIME, center=clock_center)
+        tick_1 = tick_1.rotate(2 * pi * t / SLOW_TICK_TIME, center=clock_center)
+
+        clock_circle.draw(surface)
+        inner_circle.draw(surface)
+        tick_1.draw(surface)
+        tick_2.draw(surface)
+
 
         display_date_gz = gz.text(display_date, fontfamily=FONT_FAMILY, fontsize=DISPLAY_DATE_SIZE, fontweight="bold",
                                   xy=(board[1].W * board[1].clockPosW / 100, board[1].H * (board[1].clockPosH - 15) / 100))
         display_date_gz.draw(surface)
 
         ret = surface.get_npimage(transparent=True)
-        ret[:,:,3] = 230
+        ret[:,:,3] = 245
         last = ret
         return ret
 
